@@ -4,7 +4,6 @@ from graphics import Point
 import random
 from collections import deque
 from tkinter import *
-from tkinter import messagebox
 
 class Maze:
     # this class holds all the cells in the maze as a list of lists.
@@ -31,7 +30,8 @@ class Maze:
         rows = Entry(root,justify='center')
         rows.pack()
         cols.focus_set()
-        
+
+        # used to get user input from tk input box
         def submit(*unused):
             self._num_cols = cols.get()
             self._num_rows = rows.get()
@@ -58,6 +58,7 @@ class Maze:
             rows.destroy()
             go_button.destroy()
 
+            # define the size of the cells based on the width and height of the window
             self._cell_size_x = (win.win_w - 2*x1)/self._num_cols
             self._cell_size_y = (win.win_h - 2*y1)/self._num_rows
 
@@ -76,14 +77,18 @@ class Maze:
         go_button = Button(root,text='Create Maze',command=submit)
         go_button.pack()
 
+    
     def _create_cells(self):
         self._cells = []
-        
+
+        # each column starts as an empty list, which is then filled with lists of cells representing
+        # rows
         for i in range(self._num_cols):
             self._cells.append([])
             for j in range(self._num_rows):
                 self._cells[i].append(Cell(self._win))
-    
+
+        # after the cells have been created, we draw them
         for i in range(self._num_cols):
             for j in range(self._num_rows):
                 self._draw_cell(i,j)
@@ -108,7 +113,8 @@ class Maze:
 
         to_draw.draw_cell(p1,p2)
         self._animate()
-    
+
+    # redraws the window after a set time interval
     def _animate(self):
 
         if self._win == None:
@@ -128,19 +134,20 @@ class Maze:
         self._draw_cell(end_x, end_y)
 
     def _break_walls_r(self,i,j):
-        # DFS through the grid, removing walls at random as we go,
+        # DFS through the grid, removing walls at random as we go, thereby
         # generating the maze
         self._cells[i][j].visited = True
         
         while True:
             to_visit = []             
             
-            # left and right
+            # look for visited cells to the left and right
             for k in [i-1, i+1]:
                 if 0 < k < self._num_cols:
                     if not self._cells[k][j].visited:
                         to_visit.append((k,j))
-            # up and down
+            
+            # look for visited cells up and down
             for l in [j-1, j+1]:
                 if 0 < l < self._num_rows:  
                     if not self._cells[i][l].visited:
@@ -149,9 +156,11 @@ class Maze:
             if not to_visit:
                 self._draw_cell(i,j)
                 return
-            
+
+            # pick a random cell to visit next
             next_i, next_j = random.choice(to_visit)
 
+            # destroy the walls needed to get into the randomly chosen cell
             # right
             if next_i == i + 1:
                 self._cells[i][j].has_right = False
@@ -183,107 +192,49 @@ class Maze:
     def get_adjacent(self, i,j):
         adj = []
         
-        # left and right
+        # look left and right, same as above
         for k in [i-1, i+1]:
             if 0 < k < self._num_cols:
                 adj.append((k,j))
         
-        # up and down
+        # look up and down
         for l in [j-1, j+1]:
             if 0 < l < self._num_rows:  
                 adj.append((i,l))
         
         return adj
-        
-    # def _solve_BFS(self, i,j):
-        # for this, get the full reversed path and then draw at the end.
-        # maybe create another variable that tracks backtracking
-        # number of times a given cell connects to another cell > 1
-        # means backtracking occured?
 
-
-        path = {self._cells[i][j]: None}
-        to_visit = [self._cells[i][j]]
-        undo = False
-        
-        while to_visit:
-            self._animate()
-            cur_cell = to_visit.pop(0)
-            adj = self.get_adjacent(i,j)
-            
-            for coords in adj:
-                k, l = coords
-                if k == i + 1 and not self._cells[k][j].visited:
-                    if not self._cells[k][j].has_left:
-                        to_visit.append(self._cells[k][j])
-                        path[self._cells[k][j]] = cur_cell
-                        cur_cell.draw_move(self._cells[k][j])
-                        i = k
-                
-                elif k == i - 1 and not self._cells[k][j].visited:
-                    if not self._cells[k][j].has_right:
-                        to_visit.append(self._cells[k][j])
-                        path[self._cells[k][j]] = cur_cell
-                        cur_cell.draw_move(self._cells[k][j])
-                        i = k
-
-                elif l == j + 1 and not self._cells[i][l].visited:
-                    if not self._cells[i][l].has_top:
-                        to_visit.append(self._cells[i][l])
-                        path[self._cells[i][l]] = cur_cell
-                        cur_cell.draw_move(self._cells[i][l])
-                        j = l
-                
-                elif l == j - 1 and not self._cells[i][l].visited:
-                    if not self._cells[i][l].has_bottom:
-                        to_visit.append(self._cells[i][l])
-                        path[self._cells[i][l]] = cur_cell
-                        cur_cell.draw_move(self._cells[i][l])
-                        j = l
-
-                else:
-                    to_visit.insert(0,cur_cell)
-                    undo=True
-
-            cur_cell.visited = True
-
-            """if self._cells[self._num_cols-1][self._num_rows-1].visited == True:
-                path_list = []
-                
-                while cur_cell is not None:
-                    path_list.append(cur_cell)
-                    cur_cell = path[cur_cell]
-
-                path_list.reverse()
-
-                for cell, next_cell in zip(path_list, path_list[1:]+[path_list[0]]):
-                    cell.draw_move(next_cell)"""
-            
-        return
-
+    # Here's the meat. This function solves the maze via DFS.
     def _solve_r(self,i,j):
+        # redraw the maze after each call
         self._animate()
 
+        # record that we've visited the current cell
         self._cells[i][j].visited = True
 
+        # if we're at the end of the maze, exit and report the maze as solved
         if i == self._num_cols - 1 and j == self._num_rows - 1:
             return True
-        
+
+        # get the cells immediately around the current cell
         adj = self.get_adjacent(i,j)
 
         for coords in adj:
                 k, l = coords
                 cur_cell = self._cells[i][j]
-
+                # if the next cell is to the right:
                 if k == i + 1 and not self._cells[k][j].visited:
-                    
+
+                    # if this rightward cell has no left wall, move into it
                     if not self._cells[k][j].has_left:
                         cur_cell.draw_move(self._cells[k][j])
-                        
+
+                        # recursively call the function again from the location of this rightward cell
                         if self._solve_r(k,j):
                             return True
                         cur_cell.draw_move(self._cells[k][j],True)
-                
+
+                # the rest of this is the same as above but in different directions
                 elif k == i - 1 and not self._cells[k][j].visited:
                     
                     if not self._cells[k][j].has_right:
@@ -311,7 +262,7 @@ class Maze:
                             return True
                         
                         cur_cell.draw_move(self._cells[i][l],True)
-                
+        
         return False
 
 
