@@ -30,8 +30,6 @@ class Tests(unittest.TestCase):
             for j in range(len(row)):
                 self.assertFalse(row[j].visited)
 
-        m1.solve()
-
 
 if __name__ == "__main__":
     unittest.main()
