@@ -18,6 +18,7 @@ class Cell:
         self.has_top = True
         self.has_bottom = True
 
+        # by default, we've not visited a cell
         self.visited = False
     
     def draw_cell(self, p1,p2):
@@ -32,7 +33,7 @@ class Cell:
         y2 = p2.y
 
 
-        # '#d9d9d9' is my OS background color; used for broken walls
+        # we draw whichever sides the cell has; initially all sides are drawn
         if self.has_left:
             left_side = Line(Point(x1,y1), Point(x1,y2))
             left_side.draw_line(self.__win.canvas, 'black')
